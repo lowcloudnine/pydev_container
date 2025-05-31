@@ -17,11 +17,13 @@ container.
 
 ## Specifications
 
-Image: hub.docker.com/archlinux:latest
-Shell: Xonsh
-Python: uv (this allows the use of most modern Python versions)
-Node: nodejs, npm (these are for the LSPs to make nvim really useful)
-VCS: git, lazygit
+### System & Container
+
+- **Image:** hub.docker.com/archlinux:latest
+- **Shell:** Xonsh
+- **Python:** uv (this allows the use of most modern Python versions)
+- **Node:** nodejs, npm (these are for the LSPs to make nvim really useful)
+- **VCS:** git, lazygit
 
 ### Xontribs for Xonsh
 
