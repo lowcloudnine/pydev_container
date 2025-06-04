@@ -2,9 +2,5 @@
 success_symbol = "[@](bold green)"
 error_symbol = "[@](bold red)"
 
-# Disable the package module, hiding it from the prompt completely
-[package]
-disabled = true
-
-[docker_context]
+[container]
 disabled = true

@@ -7,8 +7,11 @@
 ---@type LazySpec
 return {
   "AstroNvim/astrocommunity",
+  { import = "astrocommunity.pack.ansible" },
   { import = "astrocommunity.pack.lua" },
+  { import = "astrocommunity.pack.markdown" },
   { import = "astrocommunity.pack.python-ruff" },
+  { import = "astrocommunity.pack.toml" },
 
   { import = "astrocommunity.recipes.heirline-mode-text-statusline" },
 }

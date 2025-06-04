@@ -19,7 +19,7 @@ RUN \
   # Python stuff
   uv \
   # Node/Javascript stuff
-  nodejs npm \
+  nodejs npm tree-sitter-cli \
   # Neovim programs 
   neovim tree-sitter-cli lazygit fzf fd ripgrep bottom 
 
@@ -31,23 +31,35 @@ RUN \
   usermod -aG wheel ${USER} && \
   echo "${USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
   chmod 0440 /etc/sudoers && \
-  chmod g+w /etc/passwd
+  chmod g+w /etc/passwd && \
+  echo "/home/${USER}/.envs/dev/bin/xonsh" >> /etc/shells
+
+COPY ./configs /home/${USER}/.config
+RUN chown -R ${USER}:${USER} ${WORK_DIR}/.config
 
 USER ${USER}
-
-# Install random stuff for the user
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN \
-  # Install getnf for installation of Nerd Fonts later
-  curl -fsSL https://raw.githubusercontent.com/getnf/getnf/main/install.sh | /bin/bash 
-# /home/lenus/.local/bin/getnf -g -i FiraCode && \
 
 # Set up a Python venv
 WORKDIR ${WORK_DIR}
 RUN mkdir ./.envs
 
 WORKDIR ${WORK_DIR}/.envs
-RUN uv venv -p 3.13 dev
+RUN \
+  uv venv -p 3.13 dev && \
+  source ${WORK_DIR}/.envs/dev/bin/activate && \
+  uv pip install xonsh[full] \
+  xontrib-prompt_starship xontrib-pm xontrib-xlsd xontrib-sh xontrib-argcomplete \
+  psutil rich click && \
+  nvim --headless +q && \
+  nvim --headless +'AstroUpdate' +q && \
+  nvim --headless +'Lazy! sync' +q && \
+  nvim --headless +'Lazy! sync' +q 
 
-COPY ./configs /home/${USER}/.config
+USER root
+RUN chsh -s /home/${USER}/.envs/dev/bin/xonsh ${USER} 
+USER ${USER}
+
+WORKDIR ${WORK_DIR}
+
+ENTRYPOINT [ "/home/lenus/.envs/dev/bin/xonsh" ]
 
