@@ -5,7 +5,7 @@ ENV WORK_DIR=/home/${USER}
 
 # Install packages and clean up cache
 RUN pacman -Syu --noconfirm \
-    && pacman -S --noconfirm sudo starship zellij uv nodejs npm btop \
+    && pacman -S --noconfirm sudo starship ttyd zellij uv nodejs npm btop \
     && pacman -S --noconfirm neovim luarocks tree-sitter-cli lazygit fzf fd ripgrep bottom \
     && rm -rf /var/cache/pacman/pkg/*
 
