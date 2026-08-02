@@ -187,7 +187,10 @@ plugins {
     tab-bar { path "tab-bar"; }
     status-bar { path "status-bar"; }
     strider { path "strider"; }
-    compact-bar { path "compact-bar"; }
+    // compact-bar { path "compact-bar"; }
+    compact-bar location="zellij:compact-bar" {
+        tooltip "F1"
+    } 
     session-manager { path "session-manager"; }
 }
 
@@ -204,14 +207,16 @@ plugins {
 //    - true
 //    - false (Default)
 //
-simplified_ui true
+simplified_ui true 
+
+show_startup_tips false
 
 // Choose the path to the default shell that zellij will use for opening new panes
 // Default: $SHELL
 //
 // default_shell "fish"
-default_shell "xonsh"
 // default_shell "bash"
+default_shell "xonsh"
 
 // Choose the path to override cwd that zellij will use for opening new panes
 //
@@ -296,7 +301,7 @@ default_layout "compact"
 //   - true (default)
 //   - false
 //
-// mouse_mode false
+mouse_mode false
 
 // Configure the scroll back buffer size
 // This is the number of lines zellij stores for each pane in the scroll back
@@ -344,11 +349,12 @@ default_layout "compact"
 
 // The folder in which Zellij will look for layouts
 //
-layout_dir "/home/user/.config/zellij/layouts"
+// Uses Zellij's default layout directory under the active config directory.
+// Set this in an untracked local override if a machine needs a custom path.
 
 // The folder in which Zellij will look for themes
 //
-// theme_dir "/home/user/.config/zellij/themes"
+// theme_dir "/path/to/zellij/themes"
 
 // Set some UI stuff
 // ui {
