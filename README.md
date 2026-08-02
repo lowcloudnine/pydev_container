@@ -33,6 +33,28 @@ container.
 - xontrib-sh (shell integration)
 - xontrib-argcomplete
 
+### Python dependencies
+
+The Python tools installed in the image are declared in `pyproject.toml` and
+their resolved versions are pinned in `uv.lock`.
+
+After changing `pyproject.toml`, regenerate the lock file with Python 3.14
+available:
+
+```sh
+uv lock
+```
+
+To intentionally update the pinned versions of the existing dependencies, run:
+
+```sh
+uv lock --upgrade
+```
+
+Commit both `pyproject.toml` and `uv.lock`. The Docker build uses
+`uv sync --locked`, so it will fail if the lock file is out of date rather than
+silently changing the image's Python dependencies.
+
 ### Neovim
 
 - AstroNvim

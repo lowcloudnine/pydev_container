@@ -1,0 +1,25 @@
+[project]
+name = "pydev-container"
+version = "0.1.0"
+description = "Python tools installed in the pydev development container"
+requires-python = ">=3.14"
+dependencies = [
+    # Xonsh and associated tooling
+    # ---------------------------------
+    "xonsh[full] >= 0.24",
+    "xonsh-autoxsh >= 0.3",
+    "xonsh-direnv >= 1.6",
+    "xontrib-argcomplete >= 0.3",
+    "xontrib-back2dir >= 0.1",
+    "xontrib-clp >= 0.1",
+    "xontrib-cmd-durations >= 0.3",
+    "xontrib-fzf-completions >= 0.0.3",
+    "xontrib-prompt-starship >= 0.3",
+    "xontrib-sh >= 0.3",
+
+    # CLI Libraries and Frameworks
+    # ---------------------------------
+    "click >= 8.4",
+    "psutil >= 7.2",
+    "rich >= 15.0",
+]
