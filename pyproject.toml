@@ -1,6 +1,6 @@
 [project]
 name = "pydev-container"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python tools installed in the pydev development container"
 requires-python = ">=3.14"
 dependencies = [
@@ -19,7 +19,21 @@ dependencies = [
 
     # CLI Libraries and Frameworks
     # ---------------------------------
+    "invoke >= 3.0",
     "click >= 8.4",
+    "loguru >= 0.6",
     "psutil >= 7.2",
     "rich >= 15.0",
+    "textual >= 8.2",
+
+    # Software Dev Tools
+    # ---------------------------------
+    "bandit",
+    "basedpyright >= 1.39",
+    "coverage",
+    "pylint >= 4.0",
+    "pytest",
+    "ty >= 0.0.56",
+    "pyrefly >= 1.1",
+    "ruff >= 0.15",
 ]
