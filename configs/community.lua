@@ -1,10 +1,14 @@
 -- AstroCommunity: import any community modules here
--- We import this file in `lazy_setup.lua` before the `plugins/` folder.
--- This guarantees that the specs are processed before any user plugins.
 
--- @type LazySpec
+---@type LazySpec
 return {
 	"AstroNvim/astrocommunity",
+
+	-- AI
+	{ import = "astrocommunity.ai.codex-nvim" },
+
+	-- Docker
+	{ import = "astrocommunity.docker.lazydocker" },
 
 	-- Packs
 	{ import = "astrocommunity.pack.ansible" },
@@ -15,11 +19,9 @@ return {
 	{ import = "astrocommunity.pack.go" },
 	{ import = "astrocommunity.pack.helm" },
 	{ import = "astrocommunity.pack.html-css" },
-	{ import = "astrocommunity.pack.java" },
 	{ import = "astrocommunity.pack.json" },
 	{ import = "astrocommunity.pack.lua" },
 	{ import = "astrocommunity.pack.markdown" },
-	{ import = "astrocommunity.pack.python-ruff" },
 	{ import = "astrocommunity.pack.rust" },
 	{ import = "astrocommunity.pack.terraform" },
 	{ import = "astrocommunity.pack.toml" },
@@ -27,9 +29,46 @@ return {
 	{ import = "astrocommunity.pack.xml" },
 	{ import = "astrocommunity.pack.yaml" },
 
+	-- Base pack with basedpyright and ruff
+	{ import = "astrocommunity.pack.python.base" },
+	{ import = "astrocommunity.pack.python.basedpyright" },
+	{ import = "astrocommunity.pack.python.ruff" },
+	{ import = "astrocommunity.pack.python.ty" },
+
 	-- Markdown and LaTex
 	{ import = "astrocommunity.markdown-and-latex.vimtex" },
 
 	-- Recipes
 	{ import = "astrocommunity.recipes.heirline-mode-text-statusline" },
+
+	-- Tools are provisioned and verified during the image build. Do not try to
+	-- download missing tools whenever Neovim starts in an offline container.
+	{
+		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		opts = { run_on_start = false, auto_update = false },
+	},
+
+	-- pydev-container run exposes the host clipboard through this command.
+	-- The command intentionally fails outside that launcher instead of falling
+	-- back to a display socket that may not exist on the host platform.
+	{
+		"AstroNvim/astrocore",
+		opts = {
+			options = {
+				g = {
+					clipboard = {
+						name = "pydev-container",
+						copy = {
+							["+"] = { "pydev-container", "clipboard", "copy" },
+							["*"] = { "pydev-container", "clipboard", "copy" },
+						},
+						paste = {
+							["+"] = { "pydev-container", "clipboard", "paste" },
+							["*"] = { "pydev-container", "clipboard", "paste" },
+						},
+					},
+				},
+			},
+		},
+	},
 }
