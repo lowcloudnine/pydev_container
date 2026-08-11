@@ -2,7 +2,19 @@ FROM archlinux:latest
 
 ENV USER=eitri
 ENV WORK_DIR=/home/${USER}
-ENV PATH=${WORK_DIR}/.local/bin:${PATH}
+ENV NVM_DIR=${WORK_DIR}/.nvm
+ENV NVM_SYMLINK_CURRENT=true
+ENV PATH=${WORK_DIR}/.local/bin:${NVM_DIR}/current/bin:${PATH}
+
+# Package groups are build-time only; keeping them separate makes the single
+# pacman transaction below easier to scan and maintain.
+ARG PACMAN_DOCUMENTATION_PACKAGES="man-db man-pages less"
+ARG PACMAN_BUILD_PACKAGES="base-devel cmake just clang llvm valgrind glibc-debug"
+ARG PACMAN_RUNTIME_PACKAGES="rust uv"
+ARG PACMAN_CLI_PACKAGES="eza bat zoxide fd fzf ripgrep starship ttyd zellij btop"
+ARG PACMAN_SYSTEM_PACKAGES="sudo git lazygit ansible"
+ARG PACMAN_EDITOR_PACKAGES="neovim luarocks tree-sitter-cli bottom"
+ARG PACMAN_CLIPBOARD_PACKAGES="xclip wl-clipboard"
 
 # The official Arch image excludes man pages through NoExtract. Remove that
 # exclusion before installing packages so manual pages are actually unpacked.
@@ -10,17 +22,14 @@ ENV PATH=${WORK_DIR}/.local/bin:${PATH}
 RUN sed -i '/^NoExtract[[:space:]]*=.*usr\/share\/man\/\*/d' /etc/pacman.conf \
     && printf '\n[core-debug]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf \
     && pacman -Syu --noconfirm \
-    && pacman -S --noconfirm --needed base-devel \
-    && pacman -S --noconfirm ansible \
-    && pacman -S --noconfirm go rust uv \
-    && pacman -S --noconfirm cmake just \
-    && pacman -S --noconfirm clang valgrind llvm glibc-debug \
-    && pacman -S --noconfirm nodejs npm \
-    && pacman -S --noconfirm eza bat zoxide fd fzf ripgrep xclip wl-clipboard \
-    && pacman -S --noconfirm sudo git lazygit \
-    && pacman -S --noconfirm starship ttyd zellij btop \
-    && pacman -S --noconfirm neovim luarocks tree-sitter-cli bottom \
-    && pacman -S --noconfirm man-db man-pages less \
+    && pacman -S --noconfirm --needed \
+        ${PACMAN_DOCUMENTATION_PACKAGES} \
+        ${PACMAN_BUILD_PACKAGES} \
+        ${PACMAN_RUNTIME_PACKAGES} \
+        ${PACMAN_CLI_PACKAGES} \
+        ${PACMAN_SYSTEM_PACKAGES} \
+        ${PACMAN_EDITOR_PACKAGES} \
+        ${PACMAN_CLIPBOARD_PACKAGES} \
     && rm -rf /var/cache/pacman/pkg/*
 
 # Add user and set up sudoers safely
@@ -33,23 +42,25 @@ RUN useradd --create-home ${USER} \
 # Copy configs and set permissions
 COPY ./configs /home/${USER}/.config
 RUN chown -R ${USER}:${USER} /home/${USER}/.config
-COPY --chown=${USER}:${USER} pyproject.toml uv.lock go.mod ${WORK_DIR}/
-COPY --chown=${USER}:${USER} cmd ${WORK_DIR}/cmd
+COPY --chown=${USER}:${USER} pyproject.toml uv.lock /tmp/uv-project/
 
 USER ${USER}
 WORKDIR ${WORK_DIR}
 
-# Install the container-side client used by the host clipboard bridge.
-RUN GOCACHE=/tmp/pydev-go-build \
-    go build -o ${WORK_DIR}/.local/bin/pydev-container ./cmd/pydev-container \
-    && rm -rf /tmp/pydev-go-build
+# Install the latest Node.js LTS release (which includes npm) through NVM.
+# The `current` symlink keeps the selected Node.js version on PATH for xonsh.
+RUN git clone --depth 1 https://github.com/nvm-sh/nvm.git ${NVM_DIR} \
+    && . ${NVM_DIR}/nvm.sh \
+    && nvm install --lts \
+    && nvm alias default 'lts/*' \
+    && npm cache clean --force
 
 # Set up the Python/Xonsh environment from the locked project dependencies.
 # Discard uv's download, wheel, and pip HTTP caches; the virtual environment
 # remains intact.
 RUN UV_PROJECT_ENVIRONMENT=${WORK_DIR}/.envs/dev \
-    uv sync --locked --no-dev --no-install-project --python 3.14 \
-    && rm -rf ${WORK_DIR}/.cache/uv ${WORK_DIR}/.cache/pip
+    uv sync --project /tmp/uv-project --locked --no-dev --no-install-project --python 3.14 \
+    && rm -rf /tmp/uv-project ${WORK_DIR}/.cache/uv ${WORK_DIR}/.cache/pip
 
 # Install AstroNvim, every plugin imported by community.lua, and configured
 # Mason tools while the image build still has network access. Keep installed
@@ -65,17 +76,15 @@ RUN git clone --depth 1 https://github.com/AstroNvim/template ${WORK_DIR}/.confi
         +qa \
     && nvim --headless \
         '+lua require("lazy").load({ plugins = { "nvim-treesitter" } })' \
-        '+lua require("nvim-treesitter").install(require("astrocore").config.treesitter.ensure_installed):wait(600000)' \
-        +qa \
+        '+lua local parsers, seen = {}, {}; for _, parser in ipairs(require("astrocore").config.treesitter.ensure_installed) do if not seen[parser] then seen[parser] = true; table.insert(parsers, parser) end end; local function installed() for _, parser in ipairs(parsers) do if #vim.api.nvim_get_runtime_file("parser/" .. parser .. ".so", false) == 0 then return false end end return true end; assert(vim.wait(600000, installed, 100), "Timed out waiting for Tree-sitter parsers")' \
+        +qa! \
     && rm -rf \
         ${WORK_DIR}/.cache/nvim \
-        ${WORK_DIR}/.cache/go-build \
         ${WORK_DIR}/.cache/pip \
         ${WORK_DIR}/.cache/uv \
         ${WORK_DIR}/.npm \
         ${WORK_DIR}/.cargo/registry \
-        ${WORK_DIR}/.cargo/git \
-        && sudo rm -rf ${WORK_DIR}/go/pkg
+        ${WORK_DIR}/.cargo/git
 
 USER root
 RUN chsh -s /home/${USER}/.envs/dev/bin/xonsh ${USER}
