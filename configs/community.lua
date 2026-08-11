@@ -16,7 +16,6 @@ return {
 	{ import = "astrocommunity.pack.cmake" },
 	{ import = "astrocommunity.pack.cpp" },
 	{ import = "astrocommunity.pack.docker" },
-	{ import = "astrocommunity.pack.go" },
 	{ import = "astrocommunity.pack.helm" },
 	{ import = "astrocommunity.pack.html-css" },
 	{ import = "astrocommunity.pack.json" },
@@ -48,27 +47,4 @@ return {
 		opts = { run_on_start = false, auto_update = false },
 	},
 
-	-- pydev-container run exposes the host clipboard through this command.
-	-- The command intentionally fails outside that launcher instead of falling
-	-- back to a display socket that may not exist on the host platform.
-	{
-		"AstroNvim/astrocore",
-		opts = {
-			options = {
-				g = {
-					clipboard = {
-						name = "pydev-container",
-						copy = {
-							["+"] = { "pydev-container", "clipboard", "copy" },
-							["*"] = { "pydev-container", "clipboard", "copy" },
-						},
-						paste = {
-							["+"] = { "pydev-container", "clipboard", "paste" },
-							["*"] = { "pydev-container", "clipboard", "paste" },
-						},
-					},
-				},
-			},
-		},
-	},
 }

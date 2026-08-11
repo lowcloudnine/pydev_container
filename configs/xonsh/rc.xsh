@@ -42,7 +42,6 @@ $FZF_DEFAULT_OPTS = " ".join([
 # ---- Path
 $PATH.insert(0, "$HOME/.local/bin")
 $PATH.append("$HOME/.cargo/bin")
-$PATH.append("$HOME/go/bin")
 
 # -------------------------------------
 # Load Xontribs
