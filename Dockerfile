@@ -74,10 +74,15 @@ RUN UV_PROJECT_ENVIRONMENT=${WORK_DIR}/.envs/dev \
     && rm -rf /tmp/uv-project ${WORK_DIR}/.cache/uv ${WORK_DIR}/.cache/pip
 
 # Fedora does not package these four CLI tools in its standard repositories.
-# Build Starship and Bottom from their upstream sources. Zellij publishes
-# supported amd64 and arm64 Linux binaries; downloading its matching release
-# avoids a costly and currently unreliable cross-platform Cargo compilation.
+# Build Starship and Bottom from their upstream sources.
 RUN cargo install --locked starship bottom \
+    && rm -rf \
+        ${WORK_DIR}/.cargo/registry \
+        ${WORK_DIR}/.cargo/git
+
+# Zellij publishes supported amd64 and arm64 Linux binaries. Download the
+# matching release instead of compiling it under platform emulation.
+RUN set -eux \
     && case "${TARGETARCH}" in \
         amd64) zellij_arch=x86_64 ;; \
         arm64) zellij_arch=aarch64 ;; \
@@ -89,11 +94,10 @@ RUN cargo install --locked starship bottom \
     && tar --extract --gzip --file /tmp/zellij.tar.gz \
         --directory ${WORK_DIR}/.local/bin zellij \
     && chmod 0755 ${WORK_DIR}/.local/bin/zellij \
-    && GOBIN=${WORK_DIR}/.local/bin go install github.com/jesseduffield/lazygit@latest \
+    && rm -f /tmp/zellij.tar.gz
+
+RUN GOBIN=${WORK_DIR}/.local/bin go install github.com/jesseduffield/lazygit@latest \
     && rm -rf \
-        /tmp/zellij.tar.gz \
-        ${WORK_DIR}/.cargo/registry \
-        ${WORK_DIR}/.cargo/git \
         ${WORK_DIR}/go/pkg/mod \
         ${WORK_DIR}/go/pkg/sumdb
 
