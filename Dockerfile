@@ -88,6 +88,7 @@ RUN set -eux \
         arm64) zellij_arch=aarch64 ;; \
         *) echo "Unsupported Zellij target architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac \
+    && mkdir -p ${WORK_DIR}/.local/bin \
     && curl --fail --location --silent --show-error \
         --output /tmp/zellij.tar.gz \
         "https://github.com/zellij-org/zellij/releases/latest/download/zellij-${zellij_arch}-unknown-linux-musl.tar.gz" \
