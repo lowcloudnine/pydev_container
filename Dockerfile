@@ -14,7 +14,7 @@ ARG USER_GID=1000
 # Keep package groups separate so the Fedora package transaction below remains
 # easy to scan and maintain. These map the Arch package set to Fedora names.
 ARG DNF_DOCUMENTATION_PACKAGES="man-db man-pages less"
-ARG DNF_BUILD_PACKAGES="autoconf automake binutils bison cmake debugedit fakeroot file flex gawk gcc gcc-c++ gettext groff gzip libtool llvm m4 make openssl-devel patch pkgconf sed texinfo valgrind which zlib-ng-compat-devel just clang"
+ARG DNF_BUILD_PACKAGES="autoconf automake binutils bison cmake debugedit fakeroot file flex gawk gcc gcc-c++ gettext groff gzip libtool llvm m4 make openssl-devel patch perl-FindBin pkgconf sed texinfo valgrind which zlib-ng-compat-devel just clang"
 ARG DNF_RUNTIME_PACKAGES="rust cargo uv golang"
 ARG DNF_CLI_PACKAGES="eza bat zoxide fd-find fzf ripgrep ttyd btop"
 ARG DNF_SYSTEM_PACKAGES="sudo git ansible"
