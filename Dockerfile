@@ -98,6 +98,7 @@ RUN set -eux \
     && rm -f /tmp/zellij.tar.gz
 
 RUN GOBIN=${WORK_DIR}/.local/bin go install github.com/jesseduffield/lazygit@latest \
+    && chmod -R u+w ${WORK_DIR}/go/pkg/mod \
     && rm -rf \
         ${WORK_DIR}/go/pkg/mod \
         ${WORK_DIR}/go/pkg/sumdb
