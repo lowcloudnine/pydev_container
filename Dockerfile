@@ -10,6 +10,8 @@ ENV PATH=${WORK_DIR}/.local/bin:${WORK_DIR}/.cargo/bin:${NVM_DIR}/current/bin:${
 # Podman needs --userns=keep-id at runtime as well; see the README.
 ARG USER_UID=1000
 ARG USER_GID=1000
+# Buildx supplies this automatically for each target platform.
+ARG TARGETARCH
 
 # Keep package groups separate so the Fedora package transaction below remains
 # easy to scan and maintain. These map the Arch package set to Fedora names.
@@ -76,17 +78,20 @@ RUN UV_PROJECT_ENVIRONMENT=${WORK_DIR}/.envs/dev \
 # supported amd64 and arm64 Linux binaries; downloading its matching release
 # avoids a costly and currently unreliable cross-platform Cargo compilation.
 RUN cargo install --locked starship bottom \
-    && case "$(uname -m)" in \
-        x86_64) zellij_arch=x86_64 ;; \
-        aarch64 | arm64) zellij_arch=aarch64 ;; \
-        *) echo "Unsupported Zellij architecture: $(uname -m)" >&2; exit 1 ;; \
+    && case "${TARGETARCH}" in \
+        amd64) zellij_arch=x86_64 ;; \
+        arm64) zellij_arch=aarch64 ;; \
+        *) echo "Unsupported Zellij target architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac \
     && curl --fail --location --silent --show-error \
+        --output /tmp/zellij.tar.gz \
         "https://github.com/zellij-org/zellij/releases/latest/download/zellij-${zellij_arch}-unknown-linux-musl.tar.gz" \
-        | tar --extract --gzip --directory ${WORK_DIR}/.local/bin zellij \
+    && tar --extract --gzip --file /tmp/zellij.tar.gz \
+        --directory ${WORK_DIR}/.local/bin zellij \
     && chmod 0755 ${WORK_DIR}/.local/bin/zellij \
     && GOBIN=${WORK_DIR}/.local/bin go install github.com/jesseduffield/lazygit@latest \
     && rm -rf \
+        /tmp/zellij.tar.gz \
         ${WORK_DIR}/.cargo/registry \
         ${WORK_DIR}/.cargo/git \
         ${WORK_DIR}/go/pkg/mod \
