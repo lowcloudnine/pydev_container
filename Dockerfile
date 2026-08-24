@@ -72,9 +72,19 @@ RUN UV_PROJECT_ENVIRONMENT=${WORK_DIR}/.envs/dev \
     && rm -rf /tmp/uv-project ${WORK_DIR}/.cache/uv ${WORK_DIR}/.cache/pip
 
 # Fedora does not package these four CLI tools in its standard repositories.
-# Install their upstream releases in the non-root user's PATH so the image
-# retains the same tools as the Arch-based variant on both architectures.
-RUN cargo install --locked starship zellij bottom \
+# Build Starship and Bottom from their upstream sources. Zellij publishes
+# supported amd64 and arm64 Linux binaries; downloading its matching release
+# avoids a costly and currently unreliable cross-platform Cargo compilation.
+RUN cargo install --locked starship bottom \
+    && case "$(uname -m)" in \
+        x86_64) zellij_arch=x86_64 ;; \
+        aarch64 | arm64) zellij_arch=aarch64 ;; \
+        *) echo "Unsupported Zellij architecture: $(uname -m)" >&2; exit 1 ;; \
+    esac \
+    && curl --fail --location --silent --show-error \
+        "https://github.com/zellij-org/zellij/releases/latest/download/zellij-${zellij_arch}-unknown-linux-musl.tar.gz" \
+        | tar --extract --gzip --directory ${WORK_DIR}/.local/bin zellij \
+    && chmod 0755 ${WORK_DIR}/.local/bin/zellij \
     && GOBIN=${WORK_DIR}/.local/bin go install github.com/jesseduffield/lazygit@latest \
     && rm -rf \
         ${WORK_DIR}/.cargo/registry \
