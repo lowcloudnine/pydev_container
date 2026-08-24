@@ -6,11 +6,16 @@ ENV NVM_DIR=${WORK_DIR}/.nvm
 ENV NVM_SYMLINK_CURRENT=true
 ENV PATH=${WORK_DIR}/.local/bin:${NVM_DIR}/current/bin:${PATH}
 
+# Match these to the account that will own bind-mounted files on the host.
+# Podman needs --userns=keep-id at runtime as well; see the README.
+ARG USER_UID=1000
+ARG USER_GID=1000
+
 # Package groups are build-time only; keeping them separate makes the single
 # pacman transaction below easier to scan and maintain.
 ARG PACMAN_DOCUMENTATION_PACKAGES="man-db man-pages less"
 ARG PACMAN_BUILD_PACKAGES="base-devel cmake just clang llvm valgrind glibc-debug"
-ARG PACMAN_RUNTIME_PACKAGES="rust uv"
+ARG PACMAN_RUNTIME_PACKAGES="rust uv go"
 ARG PACMAN_CLI_PACKAGES="eza bat zoxide fd fzf ripgrep starship ttyd zellij btop"
 ARG PACMAN_SYSTEM_PACKAGES="sudo git lazygit ansible"
 ARG PACMAN_EDITOR_PACKAGES="neovim luarocks tree-sitter-cli bottom"
@@ -32,8 +37,11 @@ RUN sed -i '/^NoExtract[[:space:]]*=.*usr\/share\/man\/\*/d' /etc/pacman.conf \
         ${PACMAN_CLIPBOARD_PACKAGES} \
     && rm -rf /var/cache/pacman/pkg/*
 
-# Add user and set up sudoers safely
-RUN useradd --create-home ${USER} \
+# Add a non-root user whose IDs can match the host account that owns a bind
+# mount.  Matching both UID and GID lets the user create, modify, and delete
+# files on that mount without making the container run as root.
+RUN getent group ${USER_GID} > /dev/null || groupadd --gid ${USER_GID} ${USER} \
+    && useradd --create-home --uid ${USER_UID} --gid ${USER_GID} ${USER} \
     && usermod -aG wheel ${USER} \
     && echo "${USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USER} \
     && chmod 0440 /etc/sudoers.d/${USER} \

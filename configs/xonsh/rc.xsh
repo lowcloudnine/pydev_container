@@ -47,8 +47,6 @@ $PATH.append("$HOME/.cargo/bin")
 # Load Xontribs
 # -------------------------------------
 
-$XONTRIB_CD_LONG_DURATION = 2  # default
-
 xontrib load autoxsh
 xontrib load argcomplete
 xontrib load back2dir
@@ -56,8 +54,8 @@ xontrib load clp
 xontrib load cmd_done
 xontrib load coreutils
 xontrib load "fzf-completions"
-# xontrib load direnv
 xontrib load prompt_starship
+xontrib load sh
 
 # ---- Configurations for Xontribs
 $XLSD_SORT_METHOD = "directories_first"

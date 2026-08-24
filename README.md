@@ -73,3 +73,50 @@ repository and save it as the GitHub repository secret `DOCKERHUB_TOKEN`.
 
 The workflow publishes `latest` from `main`. A tag such as `v1.2.3` also
 publishes `1.2.3`, `1.2`, and `1`.
+
+## Using a local directory with Podman
+
+Build the image with the same numeric user and group IDs as the account that
+owns the local directory:
+
+```sh
+podman build \
+  --build-arg USER_UID="$(id -u)" \
+  --build-arg USER_GID="$(id -g)" \
+  --tag draupnir .
+```
+
+Then run it with Podman's `keep-id` user namespace and bind-mount the local
+directory. This gives the container user permission to read, write, and delete
+files there (deletion also requires write permission on the directory itself):
+
+```sh
+podman run --rm -it \
+  --userns=keep-id \
+  --volume "$PWD:/workspace" \
+  --workdir /workspace \
+  draupnir
+```
+
+On an SELinux-enforcing host, append `:Z` to the volume specification (for
+example, `--volume "$PWD:/workspace:Z"`) so Podman can relabel the mount for
+container access.
+
+### Using the published image
+
+Users of the image published to Docker Hub do not need to rebuild it. Pull and
+run the published image while mapping the invoking account's numeric IDs at
+runtime:
+
+```sh
+podman run --rm -it \
+  --userns=keep-id \
+  --user "$(id -u):$(id -g)" \
+  --volume "$PWD:/workspace" \
+  --workdir /workspace \
+  lowcloudnine/drauprin:latest
+```
+
+This lets the container read, create, modify, and delete files in the mounted
+directory as the local user. On an SELinux-enforcing host, append `:Z` to the
+volume specification.
