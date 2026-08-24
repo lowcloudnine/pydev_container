@@ -19,7 +19,7 @@ container.
 
 ### System & Container
 
-- **Base Image:** hub.docker.com/archlinux:latest
+- **Base Image:** hub.docker.com/_/fedora:latest
 - **Shell:** Xonsh
 - **Python:** uv (this allows the use of most modern Python versions)
 - **Node:** Used to install the latest LTS Node.js and npm, more flexible than

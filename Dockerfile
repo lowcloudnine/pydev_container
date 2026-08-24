@@ -1,41 +1,42 @@
-FROM archlinux:latest
+FROM fedora:latest
 
 ENV USER=eitri
 ENV WORK_DIR=/home/${USER}
 ENV NVM_DIR=${WORK_DIR}/.nvm
 ENV NVM_SYMLINK_CURRENT=true
-ENV PATH=${WORK_DIR}/.local/bin:${NVM_DIR}/current/bin:${PATH}
+ENV PATH=${WORK_DIR}/.local/bin:${WORK_DIR}/.cargo/bin:${NVM_DIR}/current/bin:${PATH}
 
 # Match these to the account that will own bind-mounted files on the host.
 # Podman needs --userns=keep-id at runtime as well; see the README.
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-# Package groups are build-time only; keeping them separate makes the single
-# pacman transaction below easier to scan and maintain.
-ARG PACMAN_DOCUMENTATION_PACKAGES="man-db man-pages less"
-ARG PACMAN_BUILD_PACKAGES="base-devel cmake just clang llvm valgrind glibc-debug"
-ARG PACMAN_RUNTIME_PACKAGES="rust uv go"
-ARG PACMAN_CLI_PACKAGES="eza bat zoxide fd fzf ripgrep starship ttyd zellij btop"
-ARG PACMAN_SYSTEM_PACKAGES="sudo git lazygit ansible"
-ARG PACMAN_EDITOR_PACKAGES="neovim luarocks tree-sitter-cli bottom"
-ARG PACMAN_CLIPBOARD_PACKAGES="xclip wl-clipboard"
+# Keep package groups separate so the Fedora package transaction below remains
+# easy to scan and maintain. These map the Arch package set to Fedora names.
+ARG DNF_DOCUMENTATION_PACKAGES="man-db man-pages less"
+ARG DNF_BUILD_PACKAGES="autoconf automake binutils bison cmake debugedit fakeroot file flex gawk gcc gcc-c++ gettext groff gzip libtool llvm m4 make openssl-devel patch pkgconf sed texinfo valgrind which zlib-ng-compat-devel just clang"
+ARG DNF_RUNTIME_PACKAGES="rust cargo uv golang"
+ARG DNF_CLI_PACKAGES="eza bat zoxide fd-find fzf ripgrep ttyd btop"
+ARG DNF_SYSTEM_PACKAGES="sudo git ansible"
+ARG DNF_EDITOR_PACKAGES="neovim luarocks tree-sitter-cli"
+ARG DNF_CLIPBOARD_PACKAGES="xclip wl-clipboard"
 
-# The official Arch image excludes man pages through NoExtract. Remove that
-# exclusion before installing packages so manual pages are actually unpacked.
-# Install packages and clean up cache.
-RUN sed -i '/^NoExtract[[:space:]]*=.*usr\/share\/man\/\*/d' /etc/pacman.conf \
-    && printf '\n[core-debug]\nInclude = /etc/pacman.d/mirrorlist\n' >> /etc/pacman.conf \
-    && pacman -Syu --noconfirm \
-    && pacman -S --noconfirm --needed \
-        ${PACMAN_DOCUMENTATION_PACKAGES} \
-        ${PACMAN_BUILD_PACKAGES} \
-        ${PACMAN_RUNTIME_PACKAGES} \
-        ${PACMAN_CLI_PACKAGES} \
-        ${PACMAN_SYSTEM_PACKAGES} \
-        ${PACMAN_EDITOR_PACKAGES} \
-        ${PACMAN_CLIPBOARD_PACKAGES} \
-    && rm -rf /var/cache/pacman/pkg/*
+# Bring the rolling Fedora base up to date, install the equivalent toolchain,
+# and include glibc debuginfo for native debugging. Fedora's debuginfo plugin
+# enables the matching debug repositories automatically.
+RUN dnf -y upgrade --refresh \
+    && dnf -y install \
+        dnf-plugins-core \
+        ${DNF_DOCUMENTATION_PACKAGES} \
+        ${DNF_BUILD_PACKAGES} \
+        ${DNF_RUNTIME_PACKAGES} \
+        ${DNF_CLI_PACKAGES} \
+        ${DNF_SYSTEM_PACKAGES} \
+        ${DNF_EDITOR_PACKAGES} \
+        ${DNF_CLIPBOARD_PACKAGES} \
+    && dnf -y debuginfo-install glibc \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 
 # Add a non-root user whose IDs can match the host account that owns a bind
 # mount.  Matching both UID and GID lets the user create, modify, and delete
@@ -69,6 +70,17 @@ RUN git clone --depth 1 https://github.com/nvm-sh/nvm.git ${NVM_DIR} \
 RUN UV_PROJECT_ENVIRONMENT=${WORK_DIR}/.envs/dev \
     uv sync --project /tmp/uv-project --locked --no-dev --no-install-project --python 3.14 \
     && rm -rf /tmp/uv-project ${WORK_DIR}/.cache/uv ${WORK_DIR}/.cache/pip
+
+# Fedora does not package these four CLI tools in its standard repositories.
+# Install their upstream releases in the non-root user's PATH so the image
+# retains the same tools as the Arch-based variant on both architectures.
+RUN cargo install --locked starship zellij bottom \
+    && GOBIN=${WORK_DIR}/.local/bin go install github.com/jesseduffield/lazygit@latest \
+    && rm -rf \
+        ${WORK_DIR}/.cargo/registry \
+        ${WORK_DIR}/.cargo/git \
+        ${WORK_DIR}/go/pkg/mod \
+        ${WORK_DIR}/go/pkg/sumdb
 
 # Install AstroNvim, every plugin imported by community.lua, and configured
 # Mason tools while the image build still has network access. Keep installed
